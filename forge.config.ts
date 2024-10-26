@@ -1,11 +1,12 @@
 import type { ForgeConfig } from '@electron-forge/shared-types';
 import { MakerSquirrel } from '@electron-forge/maker-squirrel';
-import { MakerZIP } from '@electron-forge/maker-zip';
+import { MakerDMG } from '@electron-forge/maker-dmg'
 import { MakerDeb } from '@electron-forge/maker-deb';
 import { MakerRpm } from '@electron-forge/maker-rpm';
 import { VitePlugin } from '@electron-forge/plugin-vite';
 import { FusesPlugin } from '@electron-forge/plugin-fuses';
 import { FuseV1Options, FuseVersion } from '@electron/fuses';
+import path from 'path'
 
 const config: ForgeConfig = {
   packagerConfig: {
@@ -15,14 +16,33 @@ const config: ForgeConfig = {
         name: 'bananas',
         schemes: ['bananas'],
       },
-    ]
+    ],
+    icon: path.resolve(__dirname, 'src/assets/icon/icon'), // this will auto resolve to the correct extension, depending on the platform
   },
   rebuildConfig: {},
-  makers: [new MakerSquirrel({}), new MakerZIP({}, ['darwin']), new MakerRpm({}), new MakerDeb({
-    options: {
-      mimeType: ['x-scheme-handler/bananas'],
-    },
-  })],
+  makers: [
+    new MakerSquirrel({
+      iconUrl:
+        'https://raw.githubusercontent.com/mistweaverco/bananas/main/src/assets/icon/icon.ico',
+      setupIcon: path.resolve(__dirname, 'src/assets/icon/icon.ico'),
+    }),
+    new MakerDMG({
+      icon: path.resolve(__dirname, 'src/assets/icon/icon.icns'),
+      format: 'ULFO',
+      appPath: path.resolve(__dirname, 'out', 'Bananas-darwin-x64', 'Bananas.app'),
+    }),
+    new MakerRpm({
+      options: {
+        icon: path.resolve(__dirname, 'src/assets/icon/icon.png'),
+      },
+    }),
+    new MakerDeb({
+      options: {
+        icon: path.resolve(__dirname, 'src/assets/icon/icon.png'),
+        mimeType: ['x-scheme-handler/bananas'],
+      }
+    })
+  ],
   plugins: [
     new VitePlugin({
       // `build` can specify multiple entry builds, which can be Main process, Preload scripts, Worker process, etc.
