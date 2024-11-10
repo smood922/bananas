@@ -5,23 +5,7 @@
     <title>Bananas</title>
   </head>
   <body>
-    <button id="startButton">Start</button>
-    <div>
-      <p>
-        <video width=250 id="localVideo" controls autoplay></video>
-        Local
-        <textarea rows="4" cols="50" id="localOffer"></textarea>
-        <button id="localOfferButton">CreateOffer</button>
-      </p>
-    </div>
-    <div>
-      <p>
-        <video width=250 id="remoteVideo" controls autoplay></video>
-        Remote
-        <textarea id="remoteOffer" rows="4" cols="50" placeholder="Paste remote SDP"></textarea>
-        <button id="remoteOfferButton">Answer</button>
-      </p>
-    </div>
-    <script type="module" src="/src/renderer.ts"></script>
+    <div id="root"></div>
+    <script type="module" src="/src/renderer.tsx"></script>
   </body>
 </html>

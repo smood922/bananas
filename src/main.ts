@@ -1,4 +1,4 @@
-import { app, BrowserWindow, desktopCapturer, session, protocol } from 'electron';
+import { app, BrowserWindow, desktopCapturer, session, protocol, shell } from 'electron';
 import path from 'path';
 
 // @ts-expect-error -> In vite there are no types for the following line. Electron forge error
@@ -29,10 +29,16 @@ const createWindow = () => {
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
     mainWindow.webContents.openDevTools();
+    mainWindow.maximize();
   } else {
     mainWindow.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
   }
 
+  mainWindow.setMenuBarVisibility(false);
+  mainWindow.webContents.setWindowOpenHandler(details => {
+    shell.openExternal(details.url)
+    return { action: 'deny' }
+  })
 };
 
 app.on('ready', createWindow);
