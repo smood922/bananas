@@ -1,5 +1,5 @@
 <script lang="ts">
-  const ipcHandle = (): void => window.electron.ipcRenderer.send('ping')
+  // const ipcHandle = (): void => window.electron.ipcRenderer.send('ping')
   import Navigation from './Navigation.svelte'
   import { webRTC } from './WebRTC'
 
@@ -17,6 +17,7 @@
 
 <div class="container">
   <Navigation />
+  <h1 class="title">Join</h1>
   <button class="button" id="startButton" on:click={startFunc}>Start</button>
   <h2>Local</h2>
   <div>
