@@ -14,11 +14,13 @@ asarUnpack:
   - resources/**
 win:
   executableName: bananas
+  icon: build/icon.ico
 nsis:
   artifactName: ${name}-setup_${arch}.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
+  installerIcon: build/icon.ico
 mac:
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
@@ -27,15 +29,18 @@ mac:
     - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
     - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
   notarize: false
+  icon: build/icon.icns
 dmg:
   artifactName: ${name}_${arch}.${ext}
+  icon: build/icon.icns
 linux:
   target:
     - AppImage
     - snap
     - deb
-  maintainer: electronjs.org
+  maintainer: getbananas.net
   category: Utility
+  icon: build/
 appImage:
   artifactName: ${name}_${arch}.${ext}
 snap:
