@@ -1,25 +1,25 @@
 <script lang="ts">
   const handleTopButtonsClick = (evt: MouseEvent) => {
-    evt.preventDefault();
-    const target = evt.target as HTMLButtonElement;
-    const root = target.closest('button');
+    evt.preventDefault()
+    const target = evt.target as HTMLButtonElement
+    const root = target.closest('button')
     switch (root.dataset.action) {
       case 'reportABug':
-        root.classList.add('is-loading');
+        root.classList.add('is-loading')
         setTimeout(() => {
-          root.classList.remove('is-loading');
-        }, 3000);
-        window.open('https://github.com/mistweaverco/bananas/issues/new');
-        break;
+          root.classList.remove('is-loading')
+        }, 3000)
+        window.open('https://github.com/mistweaverco/bananas/issues/new')
+        break
       case 'seeTheCode':
-        root.classList.add('is-loading');
+        root.classList.add('is-loading')
         setTimeout(() => {
-          root.classList.remove('is-loading');
-        }, 3000);
-        window.open('https://github.com/mistweaverco/bananas');
-        break;
+          root.classList.remove('is-loading')
+        }, 3000)
+        window.open('https://github.com/mistweaverco/bananas')
+        break
       default:
-        break;
+        break
     }
   }
 </script>
@@ -35,13 +35,21 @@
     <div class="navbar-end">
       <div class="navbar-item">
         <div class="buttons">
-          <button class="button is-secondary" data-action="reportABug" onClick={handleTopButtonsClick}>
+          <button
+            class="button is-secondary"
+            data-action="reportABug"
+            on:click={handleTopButtonsClick}
+          >
             <span class="icon">
               <i class="fa-solid fa-bug"></i>
             </span>
             <strong>Report a bug</strong>
           </button>
-          <button class="button is-primary" data-action="seeTheCode" onClick={handleTopButtonsClick}>
+          <button
+            class="button is-primary"
+            data-action="seeTheCode"
+            on:click={handleTopButtonsClick}
+          >
             <span class="icon">
               <i class="fa-solid fa-code"></i>
             </span>

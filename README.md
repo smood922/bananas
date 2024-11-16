@@ -24,4 +24,3 @@ without the need for an account or any server infrastructure.
 
 Grab the latest release from the
 [GitHub releases page](https://github.com/mistweaverco/bananas/releases/latest).
-
