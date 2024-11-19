@@ -18,7 +18,10 @@ export const webRTC = async (opts: WebRTCOptions): Promise<void> => {
   let _chatChannel: RTCDataChannel
 
   const stream = await navigator.mediaDevices.getDisplayMedia({ video: true })
-  // pc.addStream(stream)
+
+  for (const track of stream.getTracks()) {
+    pc.addTrack(track)
+  }
   opts.localVideo.srcObject = stream
   opts.localVideo.muted = true
 
