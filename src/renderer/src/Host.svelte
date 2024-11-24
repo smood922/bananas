@@ -1,5 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte'
+  import { mayBeConnectionString, getOfferFromUrl, ConnectionType } from './Utils'
+  import WebRTC from './WebRTC.svelte'
+  let webRTCComponent: WebRTC
   let connectionStringInput: HTMLInputElement
   let connectionStringInputSuccess: HTMLParagraphElement
   let connectionStringInputError: HTMLParagraphElement
@@ -7,20 +10,11 @@
   let connectButton: HTMLButtonElement
   let copyButton: HTMLButtonElement
 
-  const mayBeConnectionString = (str: string): boolean => {
-    try {
-      JSON.parse(atob(str))
-      return true
-    } catch (err) {
-      return false
-    }
-  }
-
   onMount(() => {
     connectionStringInput.addEventListener('input', () => {
       connectionStringInput.classList.remove('is-danger', 'is-success')
       connectionStringInputIcon.classList.remove('fa-question', 'fa-check', 'fa-times')
-      if (mayBeConnectionString(connectionStringInput.value)) {
+      if (mayBeConnectionString(ConnectionType.PARTICIPANT, connectionStringInput.value)) {
         connectionStringInputSuccess.classList.remove('is-hidden')
         connectionStringInputError.classList.add('is-hidden')
         connectButton.disabled = false
@@ -34,28 +28,23 @@
         connectButton.disabled = true
       }
     })
-    connectButton.addEventListener('click', () => {
-      console.log(connectionStringInput.value)
+    connectButton.addEventListener('click', async () => {
+      const offer = getOfferFromUrl(connectionStringInput.value)
+      await webRTCComponent.AddStream()
+      await webRTCComponent.Connect(offer)
     })
-    copyButton.addEventListener('click', () => {
+    copyButton.addEventListener('click', async () => {
       copyButton.classList.add('is-loading')
-      navigator.clipboard.writeText(
-        btoa(
-          JSON.stringify({
-            host: 'localhost',
-            port: 3000,
-            password: '1234',
-            mode: 'host',
-            peerId: '1234'
-          })
-        )
-      )
+      const offer = await webRTCComponent.CreateHostUrl()
+      navigator.clipboard.writeText(offer)
       setTimeout(() => {
         copyButton.classList.remove('is-loading')
       }, 400)
     })
   })
 </script>
+
+<WebRTC bind:this={webRTCComponent} />
 
 <div class="container p-5">
   <h1 class="title">Host a session</h1>

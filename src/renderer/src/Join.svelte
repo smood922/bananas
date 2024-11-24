@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { mayBeConnectionString, getOfferFromUrl } from './Utils'
+  import { mayBeConnectionString, getOfferFromUrl, ConnectionType } from './Utils'
   import WebRTC from './WebRTC.svelte'
   let webRTCComponent: WebRTC
   let connectionStringInput: HTMLInputElement
@@ -13,10 +13,11 @@
   let remoteScreen: HTMLVideoElement
 
   onMount(() => {
+    webRTCComponent.SetVideoElement(remoteScreen)
     connectionStringInput.addEventListener('input', () => {
       connectionStringInput.classList.remove('is-danger', 'is-success')
       connectionStringInputIcon.classList.remove('fa-question', 'fa-check', 'fa-times')
-      if (mayBeConnectionString(connectionStringInput.value)) {
+      if (mayBeConnectionString(ConnectionType.HOST, connectionStringInput.value)) {
         connectionStringInputSuccess.classList.remove('is-hidden')
         connectionStringInputError.classList.add('is-hidden')
         connectButton.disabled = false
@@ -32,13 +33,12 @@
     })
     connectButton.addEventListener('click', async () => {
       const offer = getOfferFromUrl(connectionStringInput.value)
-      console.log(offer)
       await webRTCComponent.Connect(offer)
       remoteScreenContainer.classList.remove('is-hidden')
     })
     copyButton.addEventListener('click', async () => {
       copyButton.classList.add('is-loading')
-      const offer = await webRTCComponent.CreateOfferUrl()
+      const offer = await webRTCComponent.CreateParticipantUrl()
       navigator.clipboard.writeText(offer)
       setTimeout(() => {
         copyButton.classList.remove('is-loading')
@@ -92,8 +92,22 @@
   <div bind:this={remoteScreenContainer} class="field is-hidden">
     <label class="label" for="remote_screen">Remote screen</label>
     <div class="control">
-      <video bind:this={remoteScreen} id="remote_screen" class="video" autoplay playsinline muted
+      <video
+        bind:this={remoteScreen}
+        id="remote_screen"
+        class="video"
+        controls
+        autoplay
+        playsinline
+        muted
       ></video>
     </div>
   </div>
 </div>
+
+<style>
+  .video {
+    width: 100%;
+    height: auto;
+  }
+</style>

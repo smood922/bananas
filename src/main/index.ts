@@ -20,8 +20,8 @@ function createWindow(): void {
     }
   })
 
-  session.defaultSession.setDisplayMediaRequestHandler((_, callback) => {
-    desktopCapturer.getSources({ types: ['screen', 'window'] }).then((sources) => {
+  session.defaultSession.setDisplayMediaRequestHandler(async (_, callback) => {
+    desktopCapturer.getSources({ types: ['screen'] }).then((sources) => {
       callback({ video: sources[0] })
     })
   })
