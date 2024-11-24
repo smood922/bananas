@@ -30,10 +30,10 @@
     })
     connectButton.addEventListener('click', async () => {
       const offer = getOfferFromUrl(connectionStringInput.value)
-      await webRTCComponent.AddStream()
       await webRTCComponent.Connect(offer)
     })
     copyButton.addEventListener('click', async () => {
+      await webRTCComponent.Setup()
       copyButton.classList.add('is-loading')
       const offer = await webRTCComponent.CreateHostUrl()
       navigator.clipboard.writeText(offer)

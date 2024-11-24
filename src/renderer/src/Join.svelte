@@ -13,7 +13,6 @@
   let remoteScreen: HTMLVideoElement
 
   onMount(() => {
-    webRTCComponent.SetVideoElement(remoteScreen)
     connectionStringInput.addEventListener('input', () => {
       connectionStringInput.classList.remove('is-danger', 'is-success')
       connectionStringInputIcon.classList.remove('fa-question', 'fa-check', 'fa-times')
@@ -32,13 +31,15 @@
       }
     })
     connectButton.addEventListener('click', async () => {
+      await webRTCComponent.Setup(remoteScreen)
       const offer = getOfferFromUrl(connectionStringInput.value)
       await webRTCComponent.Connect(offer)
       remoteScreenContainer.classList.remove('is-hidden')
     })
     copyButton.addEventListener('click', async () => {
       copyButton.classList.add('is-loading')
-      const offer = await webRTCComponent.CreateParticipantUrl()
+      const remoteOffer = getOfferFromUrl(connectionStringInput.value)
+      const offer = await webRTCComponent.CreateParticipantUrl(remoteOffer)
       navigator.clipboard.writeText(offer)
       setTimeout(() => {
         copyButton.classList.remove('is-loading')
