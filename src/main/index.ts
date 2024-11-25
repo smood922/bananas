@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, session, desktopCapturer } from 'electron'
+import { app, shell, BrowserWindow, session, desktopCapturer, globalShortcut } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -56,8 +56,13 @@ async function createWindow(): Promise<void> {
 
 app.whenReady().then(async () => {
   electronApp.setAppUserModelId('net.getbananas')
+
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
+  })
+
+  globalShortcut.register('CommandOrControl+Shift+I', () => {
+    BrowserWindow.getFocusedWindow()?.webContents.toggleDevTools()
   })
 
   ipcMainHandlersInit()

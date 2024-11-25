@@ -1,5 +1,5 @@
 import { BrowserWindow, screen } from 'electron'
-import { getBasePath } from './utils'
+import { loadWindowContents } from './utils'
 import { join } from 'path'
 
 export const createCursorsWindow = async (): Promise<BrowserWindow> => {
@@ -23,7 +23,7 @@ export const createCursorsWindow = async (): Promise<BrowserWindow> => {
       nodeIntegration: true
     }
   })
-  win.loadURL(`${getBasePath()}/cursors.html`)
+  loadWindowContents(win, 'cursors.html')
   win.setIgnoreMouseEvents(true)
   win.setAlwaysOnTop(true, 'normal', 1)
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })

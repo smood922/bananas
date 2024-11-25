@@ -1,10 +1,10 @@
 import { is } from '@electron-toolkit/utils'
 import { join } from 'path'
 
-export const getBasePath = (): string => {
+export const loadWindowContents = (win: Electron.BrowserWindow, file: string): void => {
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    return process.env['ELECTRON_RENDERER_URL']
+    win.loadURL(process.env['ELECTRON_RENDERER_URL'] + '/' + file)
   } else {
-    return join(__dirname, '../renderer')
+    win.loadFile(join(__dirname, '../renderer/' + file))
   }
 }
