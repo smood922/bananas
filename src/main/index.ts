@@ -2,13 +2,21 @@ import { app, shell, BrowserWindow, ipcMain, session, desktopCapturer } from 'el
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import { windowStateKeeper } from './stateKeeper'
+import { createCursorsWindow } from './cursors'
 
 app.setAsDefaultProtocolClient('bananas')
 
-function createWindow(): void {
+let cursorsWindow: BrowserWindow | null = null
+
+async function createWindow(): Promise<void> {
+  const mainWindowState = await windowStateKeeper('main')
+
   const mainWindow = new BrowserWindow({
-    width: 900,
-    height: 670,
+    width: mainWindowState.width,
+    height: mainWindowState.height,
+    x: mainWindowState.x,
+    y: mainWindowState.y,
     show: false,
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
@@ -19,6 +27,8 @@ function createWindow(): void {
       nodeIntegration: true
     }
   })
+
+  mainWindowState.track(mainWindow)
 
   session.defaultSession.setDisplayMediaRequestHandler(async (_, callback) => {
     desktopCapturer.getSources({ types: ['screen'] }).then((sources) => {
@@ -39,14 +49,16 @@ function createWindow(): void {
   // Load the remote URL for development or the local html file for production.
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
-    mainWindow.webContents.openDevTools()
-    mainWindow.maximize()
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
+
+  if (mainWindowState.isMaximized) {
+    mainWindow.maximize()
+  }
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   // Set app user model id for windows
   electronApp.setAppUserModelId('net.getbananas')
 
@@ -57,10 +69,15 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  // IPC test
-  ipcMain.on('ping', () => console.log('pong'))
+  ipcMain.on('enableCursors', async () => {
+    if (!cursorsWindow) cursorsWindow = await createCursorsWindow()
+  })
+  ipcMain.on('disableCursors', async () => {
+    cursorsWindow?.close()
+    cursorsWindow = null
+  })
 
-  createWindow()
+  await createWindow()
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
