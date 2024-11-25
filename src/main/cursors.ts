@@ -17,7 +17,7 @@ export const createCursorsWindow = async (): Promise<BrowserWindow> => {
     fullscreen: true,
     minimizable: false,
     webPreferences: {
-      preload: join(__dirname, '../cursors.js'),
+      preload: join(__dirname, '../preload/cursors.js'),
       sandbox: false,
       contextIsolation: true,
       nodeIntegration: true

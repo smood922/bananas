@@ -6,14 +6,21 @@ export default defineConfig({
     build: {
       rollupOptions: {
         input: {
-          index: 'src/main/index.ts',
-          cursors: 'src/main/cursors.ts'
+          index: 'src/main/index.ts'
         }
       }
     },
     plugins: [externalizeDepsPlugin()]
   },
   preload: {
+    build: {
+      rollupOptions: {
+        input: {
+          index: 'src/preload/index.ts',
+          cursors: 'src/preload/cursors.ts'
+        }
+      }
+    },
     plugins: [externalizeDepsPlugin()]
   },
   renderer: {

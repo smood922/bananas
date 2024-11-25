@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { mayBeConnectionString, getOfferFromUrl, ConnectionType } from './Utils'
+  import { mayBeConnectionString, getOfferFromUrl, ConnectionType, getUUIDv4 } from './Utils'
   import WebRTC from './WebRTC.svelte'
   let webRTCComponent: WebRTC
   let connectionStringInput: HTMLInputElement
@@ -11,8 +11,10 @@
   let copyButton: HTMLButtonElement
   let remoteScreenContainer: HTMLDivElement
   let remoteScreen: HTMLVideoElement
+  let UUID = getUUIDv4()
 
-  onMount(() => {
+  onMount(async () => {
+    const settings = await window.BananasApi.getSettings()
     connectionStringInput.addEventListener('input', () => {
       connectionStringInput.classList.remove('is-danger', 'is-success')
       connectionStringInputIcon.classList.remove('fa-question', 'fa-check', 'fa-times')
@@ -44,6 +46,17 @@
       setTimeout(() => {
         copyButton.classList.remove('is-loading')
       }, 400)
+    })
+    remoteScreen.addEventListener('mousemove', (e) => {
+      const { offsetX, offsetY } = e
+      // TODO: Batch cursor updates
+      webRTCComponent.UpdateRemoteCursor({
+        x: offsetX / remoteScreen.clientWidth,
+        y: offsetY / remoteScreen.clientHeight,
+        name: settings.username,
+        id: 'cursor-' + UUID,
+        color: settings.color
+      })
     })
   })
 </script>

@@ -1,6 +1,16 @@
 import { screen } from 'electron'
 import settings from 'electron-settings'
 
+export type SettingsData = {
+  username: string
+  color: string
+}
+
+type Settings = {
+  get: () => SettingsData
+  set: (data: SettingsData) => void
+}
+
 type WindowState = {
   x?: number
   y?: number
@@ -11,6 +21,20 @@ type WindowState = {
 
 type WindowStateKeeper = WindowState & {
   track: (win: Electron.BrowserWindow) => void
+}
+
+export const settingsKeeper = async (): Promise<Settings> => {
+  const hasSettings = await settings.has('settings')
+  if (hasSettings) {
+    return {
+      get: (): SettingsData => settings.get('settings') as unknown as SettingsData,
+      set: (data: SettingsData) => settings.set('settings', data)
+    }
+  }
+  return {
+    get: (): SettingsData => ({ username: 'Banana Joe', color: '#ffffff' }),
+    set: (data: SettingsData) => settings.set('settings', data)
+  }
 }
 
 export const windowStateKeeper = async (windowName: string): Promise<WindowStateKeeper> => {

@@ -10,6 +10,14 @@
   let connectButton: HTMLButtonElement
   let copyButton: HTMLButtonElement
 
+  let cursorsActive = false
+
+  const toggleRemoteCursors = (): void => {
+    cursorsActive = !cursorsActive
+    window.BananasApi.toggleRemoteCursors(cursorsActive)
+    webRTCComponent.ToggleRemoteCursors(cursorsActive)
+  }
+
   onMount(() => {
     connectionStringInput.addEventListener('input', () => {
       connectionStringInput.classList.remove('is-danger', 'is-success')
@@ -52,6 +60,17 @@
     <div class="field">
       <div class="control">
         <button class="button is-link" bind:this={copyButton}>Copy my connection string</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <div class="control">
+        <button class="button is-warning" on:click={toggleRemoteCursors}>
+          <span class="icon">
+            <i class="fas fa-mouse-pointer"></i>
+          </span>
+          <span>{cursorsActive ? 'Disable remote cursors' : 'Enable remote cursors'}</span>
+        </button>
       </div>
     </div>
 
