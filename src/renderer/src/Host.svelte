@@ -61,7 +61,12 @@
   <div class="form">
     <div class="field">
       <div class="control">
-        <button class="button is-link" bind:this={copyButton}>Copy my connection string</button>
+        <button class="button is-link" bind:this={copyButton}>
+          <span class="icon">
+            <i class="fas fa-copy"></i>
+          </span>
+          <span>Copy my connection string</span>
+        </button>
       </div>
     </div>
 
@@ -91,13 +96,22 @@
 
     <div class="field">
       <div class="control">
-        <button class="button is-link" bind:this={connectButton} disabled>Connect</button>
+        <button class="button is-link" bind:this={connectButton} disabled>
+          <span class="icon">
+            <i class="fas fa-link"></i>
+          </span>
+          <span>Connect</span>
+        </button>
       </div>
     </div>
 
     <div class="field">
       <div class="control">
-        <button bind:this={toggleRemoteCursorsButton} class="button is-warning is-hidden" on:click={toggleRemoteCursors}>
+        <button
+          bind:this={toggleRemoteCursorsButton}
+          class="button is-warning is-hidden"
+          on:click={toggleRemoteCursors}
+        >
           <span class="icon">
             <i class="fas fa-mouse-pointer"></i>
           </span>
@@ -105,6 +119,5 @@
         </button>
       </div>
     </div>
-
   </div>
 </div>

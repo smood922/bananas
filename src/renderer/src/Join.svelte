@@ -93,16 +93,24 @@
 
     <div class="field">
       <div class="control">
-        <button class="button is-link" bind:this={connectButton} disabled>Connect</button>
+        <button class="button is-link" bind:this={connectButton} disabled>
+          <span class="icon">
+            <i class="fas fa-link"></i>
+          </span>
+          <span>Connect</span>
+        </button>
       </div>
     </div>
   </div>
 
   <div class="field">
     <div class="control">
-      <button class="button is-link is-hidden" bind:this={copyButton}
-        >Copy my connection string</button
-      >
+      <button class="button is-link is-hidden" bind:this={copyButton}>
+        <span class="icon">
+          <i class="fas fa-copy"></i>
+        </span>
+        <span>Copy my connection string</span>
+      </button>
     </div>
   </div>
 

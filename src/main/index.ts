@@ -1,11 +1,18 @@
 import { app, shell, BrowserWindow, session, desktopCapturer } from 'electron'
+import path from 'path'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { windowStateKeeper } from './stateKeeper'
 import { ipcMainHandlersInit } from './ipcMainHandlers'
 
-app.setAsDefaultProtocolClient('bananas')
+if (process.defaultApp) {
+  if (process.argv.length >= 2) {
+    app.setAsDefaultProtocolClient('bananas', process.execPath, [path.resolve(process.argv[1])])
+  }
+} else {
+  app.setAsDefaultProtocolClient('bananas')
+}
 
 async function createWindow(): Promise<void> {
   const mainWindowState = await windowStateKeeper('main')
