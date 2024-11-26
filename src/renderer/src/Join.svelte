@@ -37,6 +37,7 @@
       const offer = getOfferFromUrl(connectionStringInput.value)
       await webRTCComponent.Connect(offer)
       remoteScreenContainer.classList.remove('is-hidden')
+      copyButton.classList.remove('is-hidden')
     })
     copyButton.addEventListener('click', async () => {
       copyButton.classList.add('is-loading')
@@ -67,12 +68,6 @@
   <h1 class="title">Join a session</h1>
   <div class="form">
     <div class="field">
-      <div class="control">
-        <button class="button is-link" bind:this={copyButton}>Copy my connection string</button>
-      </div>
-    </div>
-
-    <div class="field">
       <label class="label" for="remote_connection_string">Host connection string</label>
       <div class="control has-icons-left has-icons-right">
         <input
@@ -100,6 +95,14 @@
       <div class="control">
         <button class="button is-link" bind:this={connectButton} disabled>Connect</button>
       </div>
+    </div>
+  </div>
+
+  <div class="field">
+    <div class="control">
+      <button class="button is-link is-hidden" bind:this={copyButton}
+        >Copy my connection string</button
+      >
     </div>
   </div>
 

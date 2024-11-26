@@ -9,6 +9,7 @@
   let connectionStringInputIcon: HTMLElement
   let connectButton: HTMLButtonElement
   let copyButton: HTMLButtonElement
+  let toggleRemoteCursorsButton: HTMLButtonElement
 
   let cursorsActive = false
 
@@ -39,6 +40,7 @@
     connectButton.addEventListener('click', async () => {
       const offer = getOfferFromUrl(connectionStringInput.value)
       await webRTCComponent.Connect(offer)
+      toggleRemoteCursorsButton.classList.remove('is-hidden')
     })
     copyButton.addEventListener('click', async () => {
       await webRTCComponent.Setup()
@@ -60,17 +62,6 @@
     <div class="field">
       <div class="control">
         <button class="button is-link" bind:this={copyButton}>Copy my connection string</button>
-      </div>
-    </div>
-
-    <div class="field">
-      <div class="control">
-        <button class="button is-warning" on:click={toggleRemoteCursors}>
-          <span class="icon">
-            <i class="fas fa-mouse-pointer"></i>
-          </span>
-          <span>{cursorsActive ? 'Disable remote cursors' : 'Enable remote cursors'}</span>
-        </button>
       </div>
     </div>
 
@@ -103,5 +94,17 @@
         <button class="button is-link" bind:this={connectButton} disabled>Connect</button>
       </div>
     </div>
+
+    <div class="field">
+      <div class="control">
+        <button bind:this={toggleRemoteCursorsButton} class="button is-warning is-hidden" on:click={toggleRemoteCursors}>
+          <span class="icon">
+            <i class="fas fa-mouse-pointer"></i>
+          </span>
+          <span>{cursorsActive ? 'Disable remote cursors' : 'Enable remote cursors'}</span>
+        </button>
+      </div>
+    </div>
+
   </div>
 </div>
