@@ -2,20 +2,6 @@ import { ipcRenderer } from 'electron'
 import { contextBridge } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
-const cursors: HTMLDivElement[] = []
-
-ipcRenderer.on('updateRemoteCursor', (_, data) => {
-  const cursor = cursors.find((c) => c.id === data.id) ?? document.createElement('div')
-  if (!cursor.id) {
-    cursor.id = data.id
-    cursor.className = 'cursor'
-    cursor.style.backgroundColor = data.color
-  }
-  cursor.style.left = `${data.x}px`
-  cursor.style.top = `${data.y}px`
-  ipcRenderer.invoke('updateRemoteCursorReceived', data)
-})
-
 const BananasApi = {
   getSettings: async (): Promise<{ username: string; color: string }> => {
     return await ipcRenderer.invoke('getSettings')
@@ -25,6 +11,9 @@ const BananasApi = {
   },
   toggleRemoteCursors: async (state: boolean): Promise<void> => {
     ipcRenderer.invoke('toggleRemoteCursors', state)
+  },
+  remoteCursorPing: async (cursorId: string): Promise<void> => {
+    ipcRenderer.invoke('remoteCursorPing', cursorId)
   },
   updateRemoteCursor: async (state: {
     id: string

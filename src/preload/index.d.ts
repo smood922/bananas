@@ -5,6 +5,7 @@ declare global {
     electron: ElectronAPI
     BananasApi: {
       toggleRemoteCursors: (state: boolean) => Promise<void>
+      remoteCursorPing: (cursorId: string) => Promise<void>
       updateRemoteCursor: (state: {
         id: string
         name: string

@@ -4,12 +4,12 @@
   import WebRTC from './WebRTC.svelte'
   let webRTCComponent: WebRTC
   let connectionStringInput: HTMLInputElement
-  let connectionStringInputSuccess: HTMLParagraphElement
-  let connectionStringInputError: HTMLParagraphElement
   let connectionStringInputIcon: HTMLElement
   let connectButton: HTMLButtonElement
   let copyButton: HTMLButtonElement
-  let toggleRemoteCursorsButton: HTMLButtonElement
+  let startSessionButton: HTMLButtonElement
+  let connectionStringContainer: HTMLDivElement
+  let castControls: HTMLDivElement
 
   let cursorsActive = false
 
@@ -24,15 +24,11 @@
       connectionStringInput.classList.remove('is-danger', 'is-success')
       connectionStringInputIcon.classList.remove('fa-question', 'fa-check', 'fa-times')
       if (mayBeConnectionString(ConnectionType.PARTICIPANT, connectionStringInput.value)) {
-        connectionStringInputSuccess.classList.remove('is-hidden')
-        connectionStringInputError.classList.add('is-hidden')
         connectButton.disabled = false
         connectionStringInput.classList.add('is-success')
         connectionStringInputIcon.classList.add('fa-check')
       } else {
         connectionStringInput.classList.add('is-danger')
-        connectionStringInputSuccess.classList.add('is-hidden')
-        connectionStringInputError.classList.remove('is-hidden')
         connectionStringInputIcon.classList.add('fa-times')
         connectButton.disabled = true
       }
@@ -40,10 +36,11 @@
     connectButton.addEventListener('click', async () => {
       const offer = getOfferFromUrl(connectionStringInput.value)
       await webRTCComponent.Connect(offer)
-      toggleRemoteCursorsButton.classList.remove('is-hidden')
+      connectionStringContainer.classList.add('is-hidden')
+      copyButton.classList.add('is-hidden')
+      castControls.classList.remove('is-hidden')
     })
     copyButton.addEventListener('click', async () => {
-      await webRTCComponent.Setup()
       copyButton.classList.add('is-loading')
       const offer = await webRTCComponent.CreateHostUrl()
       navigator.clipboard.writeText(offer)
@@ -52,6 +49,20 @@
       }, 400)
     })
   })
+  const onStartSessionButtonClick = async (): Promise<void> => {
+    await webRTCComponent.Setup()
+    startSessionButton.classList.add('is-hidden')
+    connectionStringContainer.classList.remove('is-hidden')
+    copyButton.classList.remove('is-hidden')
+  }
+  const onDisconnectClick = async (): Promise<void> => {
+    await webRTCComponent.Disconnect()
+    startSessionButton.classList.remove('is-hidden')
+    connectionStringContainer.classList.add('is-hidden')
+    connectionStringInput.value = ''
+    copyButton.classList.add('is-hidden')
+    castControls.classList.add('is-hidden')
+  }
 </script>
 
 <WebRTC bind:this={webRTCComponent} />
@@ -61,7 +72,22 @@
   <div class="form">
     <div class="field">
       <div class="control">
-        <button class="button is-link" bind:this={copyButton}>
+        <button
+          class="button is-link"
+          bind:this={startSessionButton}
+          on:click={onStartSessionButtonClick}
+        >
+          <span class="icon">
+            <i class="fas fa-play"></i>
+          </span>
+          <span>Start a session</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="field">
+      <div class="control">
+        <button class="button is-link is-hidden" bind:this={copyButton}>
           <span class="icon">
             <i class="fas fa-copy"></i>
           </span>
@@ -70,14 +96,13 @@
       </div>
     </div>
 
-    <div class="field">
-      <label class="label" for="remote_connection_string">Participant connection string</label>
+    <div bind:this={connectionStringContainer} class="field has-addons is-hidden">
       <div class="control has-icons-left has-icons-right">
         <input
           bind:this={connectionStringInput}
+          placeholder="participant connection string"
           class="input"
           type="text"
-          id="remote_connection_string"
         />
         <span class="icon is-small is-left">
           <i class="fas fa-user"></i>
@@ -86,15 +111,6 @@
           <i bind:this={connectionStringInputIcon} class="fas fa-question"></i>
         </span>
       </div>
-      <p class="help is-success is-hidden" bind:this={connectionStringInputSuccess}>
-        Connection string seems valid.
-      </p>
-      <p class="help is-danger is-hidden" bind:this={connectionStringInputError}>
-        Connection string seems invalid.
-      </p>
-    </div>
-
-    <div class="field">
       <div class="control">
         <button class="button is-link" bind:this={connectButton} disabled>
           <span class="icon">
@@ -105,18 +121,22 @@
       </div>
     </div>
 
-    <div class="field">
-      <div class="control">
-        <button
-          bind:this={toggleRemoteCursorsButton}
-          class="button is-warning is-hidden"
-          on:click={toggleRemoteCursors}
-        >
-          <span class="icon">
-            <i class="fas fa-mouse-pointer"></i>
-          </span>
-          <span>{cursorsActive ? 'Disable remote cursors' : 'Enable remote cursors'}</span>
-        </button>
+    <div bind:this={castControls} class="is-hidden">
+      <div class="field">
+        <div class="control">
+          <button class="button is-warning" on:click={toggleRemoteCursors}>
+            <span class="icon">
+              <i class="fas fa-mouse-pointer"></i>
+            </span>
+            <span>{cursorsActive ? 'Disable remote cursors' : 'Enable remote cursors'}</span>
+          </button>
+          <button class="button is-danger" on:click={onDisconnectClick}>
+            <span class="icon">
+              <i class="fas fa-unlink"></i>
+            </span>
+            <span>Disconnect</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>

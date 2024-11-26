@@ -12,6 +12,8 @@
   let pc: RTCPeerConnection | null = null
   let remoteCursorPositionsEnabled = false
   let remoteMouseCursorPositionsChannel: RTCDataChannel | null = null
+  let remoteCursorPingChannel: RTCDataChannel | null = null
+  let stream: MediaStream | null = null
 
   const remoteMouseCursorPositionsChannelIsReady = (): boolean => {
     if (!remoteMouseCursorPositionsChannel) return false
@@ -19,22 +21,39 @@
     return false
   }
 
-  const setupDataChannels = (dc: RTCDataChannel): void => {
-    remoteMouseCursorPositionsChannel = dc
-    dc.onopen = function (e: MessageEvent): void {
-      console.log('remoteMouseCursorPositions channel open', e)
+  const remoteCursorPingChannelIsReady = (): boolean => {
+    if (!remoteCursorPingChannel) return false
+    if (remoteCursorPingChannel.readyState === 'open') return true
+    return false
+  }
+
+  const setupDataChannel = (dc: RTCDataChannel): void => {
+    if (dc.label === 'remoteMouseCursorPositions') {
+      remoteMouseCursorPositionsChannel = dc
+      dc.onmessage = function (e: MessageEvent): void {
+        if (!remoteCursorPositionsEnabled) return
+        if (remoteVideo) return
+        const data = JSON.parse(e.data)
+        window.BananasApi.updateRemoteCursor(data)
+      }
     }
-    dc.onclose = function (): void {
-      console.log('remoteMouseCursorPositions channel close')
-    }
-    dc.onmessage = function (e: MessageEvent): void {
-      if (!remoteCursorPositionsEnabled) return
-      if (remoteVideo) return
-      const data = JSON.parse(e.data)
-      window.BananasApi.updateRemoteCursor(data)
+    if (dc.label === 'remoteCursorPing') {
+      remoteCursorPingChannel = dc
+      dc.onmessage = function (e: MessageEvent): void {
+        if (!remoteCursorPositionsEnabled) return
+        if (remoteVideo) return
+        window.BananasApi.remoteCursorPing(e.data)
+      }
     }
   }
-  export async function UpdateRemoteCursor(cursorData: BananasRemoteCursorData): Promise<void> {
+  export function PingRemoteCursor(cursorId: string): void {
+    if (!remoteCursorPingChannelIsReady()) {
+      console.error('remoteCursorPingChannel not ready')
+      return
+    }
+    remoteCursorPingChannel.send(cursorId)
+  }
+  export function UpdateRemoteCursor(cursorData: BananasRemoteCursorData): void {
     if (!remoteMouseCursorPositionsChannelIsReady()) {
       console.error('remoteMouseCursorPositionsChannel not ready')
       return
@@ -49,14 +68,20 @@
   }
   export async function Setup(v: HTMLVideoElement = null): Promise<void> {
     remoteVideo = v
+    if (pc) {
+      pc.close()
+      pc = null
+    }
     pc = new RTCPeerConnection(RTCPeerConnectionConfig)
     pc.ondatachannel = (e: RTCDataChannelEvent): void => {
       if (e.channel.label === 'remoteMouseCursorPositions') {
-        setupDataChannels(e.channel)
+        setupDataChannel(e.channel)
+      }
+      if (e.channel.label === 'remoteCursorPing') {
+        setupDataChannel(e.channel)
       }
     }
     pc.ontrack = (evt): void => {
-      console.log('ontrack', evt.streams)
       if (remoteVideo) {
         evt.streams[0].getVideoTracks().forEach((track) => {
           track.enabled = true
@@ -77,7 +102,7 @@
     }
     if (!remoteVideo) {
       try {
-        const stream = await navigator.mediaDevices.getDisplayMedia({
+        stream = await navigator.mediaDevices.getDisplayMedia({
           video: true
         })
         for (const track of stream.getTracks()) {
@@ -103,7 +128,9 @@
   }
   export async function CreateHostUrl(): Promise<string> {
     remoteMouseCursorPositionsChannel = pc.createDataChannel('remoteMouseCursorPositions')
-    setupDataChannels(remoteMouseCursorPositionsChannel)
+    remoteCursorPingChannel = pc.createDataChannel('remoteCursorPing')
+    setupDataChannel(remoteMouseCursorPositionsChannel)
+    setupDataChannel(remoteCursorPingChannel)
     const desc = await pc.createOffer()
     await pc.setLocalDescription(desc)
     return getConnectionString(ConnectionType.HOST, pc.localDescription)
@@ -123,6 +150,13 @@
   export async function Disconnect(): Promise<void> {
     try {
       pc.close()
+      pc = null
+      if (stream) {
+        for (const track of stream.getTracks()) {
+          track.stop()
+        }
+        stream = null
+      }
     } catch (e) {
       errorHander(e)
     }

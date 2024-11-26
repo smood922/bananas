@@ -35,7 +35,7 @@ async function createWindow(): Promise<void> {
 
   mainWindowState.track(mainWindow)
 
-  session.defaultSession.setDisplayMediaRequestHandler(async (_, callback) => {
+  session.defaultSession.setDisplayMediaRequestHandler((_, callback) => {
     desktopCapturer.getSources({ types: ['screen'] }).then((sources) => {
       callback({ video: sources[0] })
     })

@@ -39,6 +39,11 @@ export const ipcMainHandlersInit = async (): Promise<void> => {
     }
     remoteCursorsWindow.webContents.send('updateRemoteCursor', data)
   })
+  ipcMain.handle('remoteCursorPing', async (_, cursorId): Promise<void> => {
+    if (!remoteCursorsActive) return
+    if (!remoteCursorsWindow) return
+    remoteCursorsWindow.webContents.send('remoteCursorPing', cursorId)
+  })
   ipcMain.handle('updateSettings', async (_, settings): Promise<void> => {
     const settingsKeeperInstance = await settingsKeeper()
     settingsKeeperInstance.set(settings)
