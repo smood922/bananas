@@ -3,11 +3,10 @@ import { BrowserWindow, ipcMain, screen } from 'electron'
 import { createCursorsWindow } from './cursors'
 import { settingsKeeper } from './stateKeeper'
 
-let remoteCursorsWindow: BrowserWindow | null = null
-let remoteCursorsActive = false
-
 export const ipcMainHandlersInit = async (): Promise<void> => {
   const availableDimensions = screen.getPrimaryDisplay().workAreaSize
+  let remoteCursorsWindow: BrowserWindow | null = null
+  let remoteCursorsActive = false
   ipcMain.handle('toggleRemoteCursors', async (_, state) => {
     remoteCursorsActive = state
     if (!remoteCursorsWindow && remoteCursorsActive) {
