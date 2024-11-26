@@ -1,17 +1,20 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { mayBeConnectionString, getOfferFromUrl, ConnectionType } from './Utils'
+  import { mayBeConnectionString, getDataFromBananasUrl, ConnectionType } from './Utils'
   import WebRTC from './WebRTC.svelte'
   let webRTCComponent: WebRTC
   let connectionStringInput: HTMLInputElement
-  let connectionStringInputIcon: HTMLElement
   let connectButton: HTMLButtonElement
   let copyButton: HTMLButtonElement
   let startSessionButton: HTMLButtonElement
-  let connectionStringContainer: HTMLDivElement
-  let castControls: HTMLDivElement
 
   let cursorsActive = false
+  let displayStreamActive = false
+  let microphoneActive = true
+  let isStreaming = false
+  let sessionStarted = false
+  let connectionStringIsValid: boolean | null = null
+  let copyButtonIsLoading = false
 
   const toggleRemoteCursors = (): void => {
     cursorsActive = !cursorsActive
@@ -19,61 +22,115 @@
     webRTCComponent.ToggleRemoteCursors(cursorsActive)
   }
 
-  onMount(() => {
+  onMount(async () => {
+    const settings = await window.BananasApi.getSettings()
     connectionStringInput.addEventListener('input', () => {
-      connectionStringInput.classList.remove('is-danger', 'is-success')
-      connectionStringInputIcon.classList.remove('fa-question', 'fa-check', 'fa-times')
-      if (mayBeConnectionString(ConnectionType.PARTICIPANT, connectionStringInput.value)) {
-        connectButton.disabled = false
-        connectionStringInput.classList.add('is-success')
-        connectionStringInputIcon.classList.add('fa-check')
-      } else {
-        connectionStringInput.classList.add('is-danger')
-        connectionStringInputIcon.classList.add('fa-times')
-        connectButton.disabled = true
+      if (connectionStringInput.value === '') {
+        connectionStringIsValid = null
+        return
       }
+      connectionStringIsValid = mayBeConnectionString(
+        ConnectionType.PARTICIPANT,
+        connectionStringInput.value
+      )
     })
     connectButton.addEventListener('click', async () => {
-      const offer = getOfferFromUrl(connectionStringInput.value)
-      await webRTCComponent.Connect(offer)
-      connectionStringContainer.classList.add('is-hidden')
-      copyButton.classList.add('is-hidden')
-      castControls.classList.remove('is-hidden')
+      const data = getDataFromBananasUrl(connectionStringInput.value)
+      await webRTCComponent.Connect(data.rtcSessionDescription)
+      isStreaming = true
+      displayStreamActive = true
     })
     copyButton.addEventListener('click', async () => {
-      copyButton.classList.add('is-loading')
-      const offer = await webRTCComponent.CreateHostUrl()
+      copyButtonIsLoading = true
+      const offer = await webRTCComponent.CreateHostUrl({
+        username: settings.username
+      })
       navigator.clipboard.writeText(offer)
       setTimeout(() => {
-        copyButton.classList.remove('is-loading')
+        copyButtonIsLoading = false
       }, 400)
     })
   })
   const onStartSessionButtonClick = async (): Promise<void> => {
     await webRTCComponent.Setup()
-    startSessionButton.classList.add('is-hidden')
-    connectionStringContainer.classList.remove('is-hidden')
-    copyButton.classList.remove('is-hidden')
+    sessionStarted = true
   }
   const onDisconnectClick = async (): Promise<void> => {
     await webRTCComponent.Disconnect()
-    startSessionButton.classList.remove('is-hidden')
-    connectionStringContainer.classList.add('is-hidden')
     connectionStringInput.value = ''
-    copyButton.classList.add('is-hidden')
-    castControls.classList.add('is-hidden')
+    connectionStringIsValid = null
+    isStreaming = false
+    sessionStarted = false
+  }
+  const onMicrophoneToggle = async (): Promise<void> => {
+    microphoneActive = !microphoneActive
+    webRTCComponent.ToggleMicrophone()
+  }
+  const onDisplayStreamToggle = async (): Promise<void> => {
+    displayStreamActive = !displayStreamActive
+    webRTCComponent.ToggleDisplayStream()
+    if (!displayStreamActive) {
+      cursorsActive = false
+      window.BananasApi.toggleRemoteCursors(cursorsActive)
+      webRTCComponent.ToggleRemoteCursors(cursorsActive)
+    }
   }
 </script>
 
 <WebRTC bind:this={webRTCComponent} />
 
 <div class="container p-5">
-  <h1 class="title">Host a session</h1>
+  <h1 class="title">{!isStreaming ? 'Host' : 'Hosting'} a session</h1>
+  <div class={!isStreaming ? 'is-hidden' : ''}>
+    <div class="fixed-grid">
+      <div class="grid">
+        <div class="cell">
+          <button
+            title={displayStreamActive ? 'Streaming your display' : 'Not streaming your display'}
+            class="button {displayStreamActive ? 'is-success' : 'is-danger'}"
+            on:click={onDisplayStreamToggle}
+          >
+            <span class="icon">
+              <i class="fa-solid fa-display"></i>
+            </span>
+          </button>
+          <button
+            title={microphoneActive ? 'Microphone active' : 'Microphone muted'}
+            class="button {microphoneActive ? 'is-success' : 'is-danger'}"
+            on:click={onMicrophoneToggle}
+          >
+            <span class="icon">
+              <i class="fas {microphoneActive ? 'fa-microphone' : 'fa-microphone-slash'}"></i>
+            </span>
+          </button>
+          <button
+            title={cursorsActive ? 'Remote cursors enabled' : 'Remote cursors disabled'}
+            class="button {cursorsActive ? 'is-success' : 'is-danger'} {!displayStreamActive
+              ? 'is-hidden'
+              : ''}"
+            on:click={toggleRemoteCursors}
+          >
+            <span class="icon">
+              <i class="fas fa-mouse-pointer"></i>
+            </span>
+          </button>
+        </div>
+        <div class="cell has-text-right">
+          <button class="button is-danger" on:click={onDisconnectClick}>
+            <span class="icon">
+              <i class="fas fa-unlink"></i>
+            </span>
+            <span>Disconnect</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
   <div class="form">
     <div class="field">
       <div class="control">
         <button
-          class="button is-link"
+          class="button is-link {!sessionStarted ? '' : 'is-hidden'}"
           bind:this={startSessionButton}
           on:click={onStartSessionButtonClick}
         >
@@ -87,7 +144,12 @@
 
     <div class="field">
       <div class="control">
-        <button class="button is-link is-hidden" bind:this={copyButton}>
+        <button
+          class="button is-link {!sessionStarted || isStreaming
+            ? 'is-hidden'
+            : ''} {copyButtonIsLoading ? 'is-loading' : ''}"
+          bind:this={copyButton}
+        >
           <span class="icon">
             <i class="fas fa-copy"></i>
           </span>
@@ -96,47 +158,50 @@
       </div>
     </div>
 
-    <div bind:this={connectionStringContainer} class="field has-addons is-hidden">
+    <div class="field has-addons {!sessionStarted || isStreaming ? 'is-hidden' : ''}">
       <div class="control has-icons-left has-icons-right">
         <input
           bind:this={connectionStringInput}
           placeholder="participant connection string"
-          class="input"
+          class="input {connectionStringIsValid === null
+            ? ''
+            : connectionStringIsValid
+              ? 'is-success'
+              : 'is-danger'}"
           type="text"
         />
         <span class="icon is-small is-left">
           <i class="fas fa-user"></i>
         </span>
         <span class="icon is-small is-right">
-          <i bind:this={connectionStringInputIcon} class="fas fa-question"></i>
+          <i
+            class="fas fa-question {connectionStringIsValid === null
+              ? 'fa-question'
+              : connectionStringIsValid
+                ? 'fa-check'
+                : 'fa-times'}"
+          ></i>
         </span>
       </div>
       <div class="control">
-        <button class="button is-link" bind:this={connectButton} disabled>
+        <button
+          class="button {connectionStringIsValid === null
+            ? 'is-link'
+            : connectionStringIsValid
+              ? 'is-success'
+              : 'is-danger'}"
+          bind:this={connectButton}
+          disabled={connectionStringIsValid ? false : true}
+        >
           <span class="icon">
             <i class="fas fa-link"></i>
           </span>
-          <span>Connect</span>
+          <span
+            >Connect {connectionStringIsValid
+              ? getDataFromBananasUrl(connectionStringInput.value).data.username
+              : ''}
+          </span>
         </button>
-      </div>
-    </div>
-
-    <div bind:this={castControls} class="is-hidden">
-      <div class="field">
-        <div class="control">
-          <button class="button is-warning" on:click={toggleRemoteCursors}>
-            <span class="icon">
-              <i class="fas fa-mouse-pointer"></i>
-            </span>
-            <span>{cursorsActive ? 'Disable remote cursors' : 'Enable remote cursors'}</span>
-          </button>
-          <button class="button is-danger" on:click={onDisconnectClick}>
-            <span class="icon">
-              <i class="fas fa-unlink"></i>
-            </span>
-            <span>Disconnect</span>
-          </button>
-        </div>
       </div>
     </div>
   </div>

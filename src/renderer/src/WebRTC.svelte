@@ -13,7 +13,9 @@
   let remoteCursorPositionsEnabled = false
   let remoteMouseCursorPositionsChannel: RTCDataChannel | null = null
   let remoteCursorPingChannel: RTCDataChannel | null = null
+  let audioStream: MediaStream | null = null
   let stream: MediaStream | null = null
+  let audioElement: HTMLAudioElement | null = null
 
   const remoteMouseCursorPositionsChannelIsReady = (): boolean => {
     if (!remoteMouseCursorPositionsChannel) return false
@@ -68,6 +70,8 @@
   }
   export async function Setup(v: HTMLVideoElement = null): Promise<void> {
     remoteVideo = v
+    audioElement = document.createElement('audio')
+    audioElement.autoplay = true
     if (pc) {
       pc.close()
       pc = null
@@ -83,11 +87,9 @@
     }
     pc.ontrack = (evt): void => {
       if (remoteVideo) {
-        evt.streams[0].getVideoTracks().forEach((track) => {
-          track.enabled = true
-        })
         remoteVideo.srcObject = evt.streams[0]
       }
+      audioElement.srcObject = evt.streams[0]
     }
     pc.onicecandidate = function (e: RTCPeerConnectionIceEvent): void {
       const cand = e.candidate
@@ -100,20 +102,35 @@
     pc.oniceconnectionstatechange = function (): void {
       console.log('iceconnectionstatechange')
     }
+    audioStream = await navigator.mediaDevices.getUserMedia({
+      video: false,
+      audio: true
+    })
     if (!remoteVideo) {
       try {
         stream = await navigator.mediaDevices.getDisplayMedia({
-          video: true
+          video: true,
+          audio: false
         })
         for (const track of stream.getTracks()) {
+          pc.addTrack(track, stream)
+        }
+        for (const track of audioStream.getTracks()) {
           pc.addTrack(track, stream)
         }
       } catch (e) {
         errorHander(e)
       }
+    } else {
+      for (const track of audioStream.getTracks()) {
+        pc.addTrack(track, audioStream)
+      }
     }
   }
-  export async function CreateParticipantUrl(c: RTCSessionDescriptionOptions): Promise<string> {
+  export async function CreateParticipantUrl(
+    c: RTCSessionDescriptionOptions,
+    data: { username: string }
+  ): Promise<string> {
     try {
       const desc = new RTCSessionDescription(c)
       await pc.setRemoteDescription(desc)
@@ -124,16 +141,38 @@
     } catch (e) {
       errorHander(e)
     }
-    return getConnectionString(ConnectionType.PARTICIPANT, pc.localDescription)
+    return getConnectionString(ConnectionType.PARTICIPANT, pc.localDescription, data)
   }
-  export async function CreateHostUrl(): Promise<string> {
+  export async function CreateHostUrl(data: { username: string }): Promise<string> {
     remoteMouseCursorPositionsChannel = pc.createDataChannel('remoteMouseCursorPositions')
     remoteCursorPingChannel = pc.createDataChannel('remoteCursorPing')
     setupDataChannel(remoteMouseCursorPositionsChannel)
     setupDataChannel(remoteCursorPingChannel)
     const desc = await pc.createOffer()
     await pc.setLocalDescription(desc)
-    return getConnectionString(ConnectionType.HOST, pc.localDescription)
+    return getConnectionString(ConnectionType.HOST, pc.localDescription, data)
+  }
+  export function ToggleDisplayStream(): void {
+    if (stream) {
+      for (const track of stream.getVideoTracks()) {
+        track.enabled = !track.enabled
+      }
+    }
+  }
+  export function ToggleMicrophone(): void {
+    if (audioStream) {
+      for (const track of audioStream.getAudioTracks()) {
+        track.enabled = !track.enabled
+      }
+    }
+  }
+  export function IsMicrophoneActive(): boolean {
+    if (audioStream) {
+      for (const track of audioStream.getAudioTracks()) {
+        return track.enabled
+      }
+    }
+    return false
   }
   export async function Connect(c: RTCSessionDescriptionOptions): Promise<void> {
     try {

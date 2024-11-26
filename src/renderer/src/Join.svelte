@@ -3,52 +3,52 @@
   import {
     makeVideoDraggable,
     mayBeConnectionString,
-    getOfferFromUrl,
+    getDataFromBananasUrl,
     ConnectionType,
     getUUIDv4
   } from './Utils'
   import WebRTC from './WebRTC.svelte'
   let webRTCComponent: WebRTC
   let connectionStringInput: HTMLInputElement
-  let connectionStringInputIcon: HTMLElement
   let connectButton: HTMLButtonElement
   let copyButton: HTMLButtonElement
-  let remoteScreenContainer: HTMLDivElement
   let remoteScreen: HTMLVideoElement
-  let connectionStringInputContainer: HTMLDivElement
   let UUID = getUUIDv4()
   let zoomFactor = 1
+  let microphoneActive = true
+  let isStreaming = false
+  let isConnected = false
+  let connectionStringIsValid: boolean | null = null
+  let copyButtonIsLoading = false
 
   onMount(async () => {
     const settings = await window.BananasApi.getSettings()
     makeVideoDraggable(remoteScreen)
     connectionStringInput.addEventListener('input', () => {
-      connectionStringInput.classList.remove('is-danger', 'is-success')
-      connectionStringInputIcon.classList.remove('fa-question', 'fa-check', 'fa-times')
-      if (mayBeConnectionString(ConnectionType.HOST, connectionStringInput.value)) {
-        connectButton.disabled = false
-        connectionStringInput.classList.add('is-success')
-        connectionStringInputIcon.classList.add('fa-check')
-      } else {
-        connectionStringInput.classList.add('is-danger')
-        connectionStringInputIcon.classList.add('fa-times')
-        connectButton.disabled = true
+      if (connectionStringInput.value === '') {
+        connectionStringIsValid = null
+        return
       }
+      connectionStringIsValid = mayBeConnectionString(
+        ConnectionType.HOST,
+        connectionStringInput.value
+      )
     })
     connectButton.addEventListener('click', async () => {
       await webRTCComponent.Setup(remoteScreen)
-      const offer = getOfferFromUrl(connectionStringInput.value)
-      await webRTCComponent.Connect(offer)
-      connectionStringInputContainer.classList.add('is-hidden')
-      copyButton.classList.remove('is-hidden')
+      const data = getDataFromBananasUrl(connectionStringInput.value)
+      await webRTCComponent.Connect(data.rtcSessionDescription)
+      isConnected = true
     })
     copyButton.addEventListener('click', async () => {
-      copyButton.classList.add('is-loading')
-      const remoteOffer = getOfferFromUrl(connectionStringInput.value)
-      const offer = await webRTCComponent.CreateParticipantUrl(remoteOffer)
-      navigator.clipboard.writeText(offer)
+      copyButtonIsLoading = true
+      const remoteData = getDataFromBananasUrl(connectionStringInput.value)
+      const data = await webRTCComponent.CreateParticipantUrl(remoteData.rtcSessionDescription, {
+        username: settings.username
+      })
+      navigator.clipboard.writeText(data)
       setTimeout(() => {
-        copyButton.classList.remove('is-loading')
+        copyButtonIsLoading = false
       }, 400)
     })
     remoteScreen.addEventListener('dblclick', () => {
@@ -66,16 +66,17 @@
       })
     })
     remoteScreen.addEventListener('loadedmetadata', () => {
-      remoteScreenContainer.classList.remove('is-hidden')
+      isStreaming = true
       copyButton.classList.add('is-hidden')
     })
   })
   const onDisconnectClick = async (): Promise<void> => {
     await webRTCComponent.Disconnect()
-    connectionStringInputContainer.classList.remove('is-hidden')
     connectionStringInput.value = ''
-    copyButton.classList.add('is-hidden')
-    remoteScreenContainer.classList.add('is-hidden')
+    connectionStringIsValid = null
+    isStreaming = false
+    microphoneActive = false
+    isConnected = false
   }
   const onFullscreenClick = (): void => {
     remoteScreen.requestFullscreen()
@@ -89,34 +90,85 @@
     zoomFactor -= 0.1
     remoteScreen.style.scale = zoomFactor.toString()
   }
+  const onMicrophoneToggle = async (): Promise<void> => {
+    microphoneActive = !microphoneActive
+    webRTCComponent.ToggleMicrophone()
+  }
 </script>
 
 <WebRTC bind:this={webRTCComponent} />
 
 <div class="container p-5">
-  <h1 class="title">Join a session</h1>
+  <h1 class="title">{!isStreaming ? 'Join' : 'Joined'} a session</h1>
+  <div class={!isStreaming ? 'is-hidden' : ''}>
+    <div class="fixed-grid">
+      <div class="grid">
+        <div class="cell">
+          <button
+            title={microphoneActive ? 'Microphone active' : 'Microphone muted'}
+            class="button {microphoneActive ? 'is-success' : 'is-danger'}"
+            on:click={onMicrophoneToggle}
+          >
+            <span class="icon">
+              <i class="fas {microphoneActive ? 'fa-microphone' : 'fa-microphone-slash'}"></i>
+            </span>
+          </button>
+        </div>
+        <div class="cell has-text-right">
+          <button class="button is-danger" on:click={onDisconnectClick}>
+            <span class="icon">
+              <i class="fas fa-unlink"></i>
+            </span>
+            <span>Disconnect</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
   <div class="form">
-    <div bind:this={connectionStringInputContainer} class="field has-addons">
+    <div class="field has-addons {isStreaming || isConnected ? 'is-hidden' : ''}">
       <div class="control has-icons-left has-icons-right">
         <input
           bind:this={connectionStringInput}
           placeholder="host connection string"
-          class="input"
+          class="input {connectionStringIsValid === null
+            ? ''
+            : connectionStringIsValid
+              ? 'is-success'
+              : 'is-danger'}"
           type="text"
         />
         <span class="icon is-small is-left">
           <i class="fas fa-user"></i>
         </span>
         <span class="icon is-small is-right">
-          <i bind:this={connectionStringInputIcon} class="fas fa-question"></i>
+          <i
+            class="fas fa-question {connectionStringIsValid === null
+              ? 'fa-question'
+              : connectionStringIsValid
+                ? 'fa-check'
+                : 'fa-times'}"
+          ></i>
         </span>
       </div>
       <div class="control">
-        <button class="button is-link" bind:this={connectButton} disabled>
+        <button
+          class="button {connectionStringIsValid === null
+            ? 'is-link'
+            : connectionStringIsValid
+              ? 'is-success'
+              : 'is-danger'}"
+          bind:this={connectButton}
+          disabled={connectionStringIsValid ? false : true}
+        >
           <span class="icon">
             <i class="fas fa-link"></i>
           </span>
-          <span>Connect</span>
+          <span
+            >Connect {connectionStringIsValid
+              ? getDataFromBananasUrl(connectionStringInput.value).data.username
+              : ''}
+          </span>
         </button>
       </div>
     </div>
@@ -124,7 +176,12 @@
 
   <div class="field">
     <div class="control">
-      <button class="button is-link is-hidden" bind:this={copyButton}>
+      <button
+        class="button is-link {!isConnected || isStreaming ? 'is-hidden' : ''} {copyButtonIsLoading
+          ? 'is-loading'
+          : ''}"
+        bind:this={copyButton}
+      >
         <span class="icon">
           <i class="fas fa-copy"></i>
         </span>
@@ -134,8 +191,8 @@
   </div>
 </div>
 
-<div bind:this={remoteScreenContainer} class="is-hidden">
-  <div bind:this={remoteScreenContainer} class="field">
+<div class={!isStreaming ? 'is-hidden' : ''}>
+  <div class="field">
     <label class="label" for="remote_screen">Remote screen</label>
     <div class="control">
       <div class="video-overflow">
@@ -163,12 +220,6 @@
           <i class="fas fa-expand"></i>
         </span>
         <span>Fullscreen</span>
-      </button>
-      <button class="button is-danger" on:click={onDisconnectClick}>
-        <span class="icon">
-          <i class="fas fa-unlink"></i>
-        </span>
-        <span>Disconnect</span>
       </button>
     </div>
   </div>

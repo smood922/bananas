@@ -18,8 +18,10 @@ export const mayBeConnectionString = (ct: ConnectionType, str: string): boolean 
     const url = new URL(str)
     if (url.protocol !== 'bananas:') return false
     if (url.pathname.slice(2) !== ct) return false
-    const hash = url.hash.slice(1)
-    JSON.parse(atob(hash))
+    const token = url.searchParams.get('token')
+    const username = url.searchParams.get('username')
+    if (!token || !username) return false
+    JSON.parse(atob(token))
     return true
   } catch (err) {
     return false
@@ -28,15 +30,28 @@ export const mayBeConnectionString = (ct: ConnectionType, str: string): boolean 
 
 export const getConnectionString = (
   ct: ConnectionType,
-  offer: RTCSessionDescriptionInit
+  offer: RTCSessionDescriptionInit,
+  data: {
+    username: string
+  }
 ): string => {
-  const path = btoa(JSON.stringify(offer))
-  return `bananas://${ct}#${path}`
+  const { username } = data
+  const token = encodeURIComponent(btoa(JSON.stringify(offer)))
+  return `bananas://${ct}?username=${encodeURIComponent(username)}&token=${token}`
 }
 
-export const getOfferFromUrl = (url: string): RTCSessionDescriptionInit => {
-  const hash = new URL(url).hash.slice(1)
-  return JSON.parse(atob(hash))
+export const getDataFromBananasUrl = (
+  url: string
+): { data: { username: string }; rtcSessionDescription: RTCSessionDescriptionInit } => {
+  const u = new URL(url)
+  const token = u.searchParams.get('token')
+  const username = u.searchParams.get('username')
+  return {
+    data: {
+      username: username
+    },
+    rtcSessionDescription: JSON.parse(atob(token))
+  }
 }
 
 export const makeVideoDraggable = (video: HTMLVideoElement): void => {
