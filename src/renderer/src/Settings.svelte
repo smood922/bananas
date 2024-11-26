@@ -5,6 +5,7 @@
   let color: HTMLInputElement
   let modalSuccess: HTMLDivElement
   let modalFailure: HTMLDivElement
+  let colorPreviewIcon: HTMLElement
 
   const checkIsValidHexColor = (color: string): boolean => {
     return /^#[0-9A-F]{6}$/i.test(color)
@@ -13,6 +14,7 @@
     if (checkIsValidHexColor(this.value)) {
       this.classList.remove('is-danger')
       this.classList.add('is-success')
+      colorPreviewIcon.style.setProperty('--color', this.value)
     } else {
       this.classList.remove('is-success')
       this.classList.add('is-danger')
@@ -50,6 +52,7 @@
     const settings = await window.BananasApi.getSettings()
     username.value = settings.username
     color.value = settings.color
+    colorPreviewIcon.style.setProperty('--color', color.value)
   })
 </script>
 
@@ -105,7 +108,7 @@
           placeholder="#fffff"
         />
         <span class="icon is-small is-left">
-          <i class="fas fa-palette"></i>
+          <i bind:this={colorPreviewIcon} class="fas fa-palette"></i>
         </span>
       </div>
     </div>
@@ -117,3 +120,10 @@
     </div>
   </form>
 </div>
+
+<style>
+  span.icon i.fa-palette:before {
+    color: var(--color);
+    text-shadow: '-1px 0 black, 0 1px black, 1px 0 black, 0 -1px black';
+  }
+</style>
