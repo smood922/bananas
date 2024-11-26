@@ -19,7 +19,7 @@ WINDOWS_FILES=(
 )
 
 MACOS_FILES=(
-  "dist/${BIN_NAME}_arm64.dmg"
+  "dist/${BIN_NAME}_universal.dmg"
 )
 
 set_release_action() {

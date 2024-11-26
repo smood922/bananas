@@ -30,6 +30,10 @@ mac:
     - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
   notarize: false
   icon: build/icon.icns
+  target:
+    - target: dmg
+      arch:
+        - universal
 dmg:
   artifactName: ${name}_${arch}.${ext}
   icon: build/icon.icns
