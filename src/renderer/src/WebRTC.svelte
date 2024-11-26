@@ -186,6 +186,9 @@
       errorHander(e)
     }
   }
+  export function IsConnected(): boolean {
+    return pc ? pc.connectionState === 'connected' : false
+  }
   export async function Disconnect(): Promise<void> {
     try {
       pc.close()

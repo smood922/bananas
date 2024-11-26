@@ -1,12 +1,13 @@
 <script lang="ts">
-  import { useActiveView } from './stores'
+  import { useActiveView, useNavigationEnabled, useIsWatching, useIsHosting } from './stores'
   const activeView = useActiveView()
+  const isHosting = useIsHosting()
+  const isWatching = useIsWatching()
+  const navigationEnabled = useNavigationEnabled()
   const externalLinkClickHandler = (root: HTMLButtonElement, url: string): void => {
     root.classList.add('is-loading')
-    root.classList.add('is-primary')
     setTimeout(() => {
       root.classList.remove('is-loading')
-      root.classList.remove('is-primary')
     }, 3000)
     window.open(url)
   }
@@ -14,13 +15,7 @@
   const handleTopButtonsClick = (evt: MouseEvent): void => {
     evt.preventDefault()
     const target = evt.target as HTMLButtonElement
-    const buttonsContainer = target.closest('div.buttons')
-    buttonsContainer.querySelectorAll('button').forEach((button) => {
-      button.classList.remove('is-active', 'is-primary')
-    })
     const root = target.closest('button')
-    root.classList.add('is-primary')
-    root.classList.add('is-active')
     switch (root.dataset.action) {
       case 'join':
         $activeView = 'join'
@@ -50,25 +45,36 @@
         <div class="navbar-item">
           <div class="buttons">
             <button
-              class="button is-primary is-active"
+              class="button {$activeView === 'join' ? 'is-active is-primary' : 'is-secondary'}"
               data-action="join"
               on:click={handleTopButtonsClick}
+              disabled={!$navigationEnabled}
             >
               <span class="icon">
                 <i class="fa-solid fa-right-to-bracket"></i>
               </span>
-              <strong>Join a session</strong>
+              <strong>Join{!$isWatching ? '' : 'ed'} a session</strong>
             </button>
-            <button class="button is-secondary" data-action="host" on:click={handleTopButtonsClick}>
+            <button
+              class="button is-secondary {$activeView === 'host'
+                ? 'is-active is-primary'
+                : 'is-secondary'}"
+              data-action="host"
+              on:click={handleTopButtonsClick}
+              disabled={!$navigationEnabled}
+            >
               <span class="icon">
                 <i class="fa-solid fa-earth-africa"></i>
               </span>
-              <strong>Host a session</strong>
+              <strong>{!$isHosting ? 'Host a session' : 'Hosting a session'}</strong>
             </button>
             <button
-              class="button is-secondary"
+              class="button is-secondary {$activeView === 'settings'
+                ? 'is-active is-primary'
+                : 'is-secondary'}"
               data-action="settings"
               on:click={handleTopButtonsClick}
+              disabled={!$navigationEnabled}
             >
               <span class="icon">
                 <i class="fa-solid fa-gear"></i>

@@ -7,7 +7,12 @@
     ConnectionType,
     getUUIDv4
   } from './Utils'
+  import { useNavigationEnabled, useIsWatching } from './stores'
   import WebRTC from './WebRTC.svelte'
+
+  const navigationEnabled = useNavigationEnabled()
+  const isWatching = useIsWatching()
+
   let webRTCComponent: WebRTC
   let connectionStringInput: HTMLInputElement
   let connectButton: HTMLButtonElement
@@ -39,6 +44,8 @@
       const data = getDataFromBananasUrl(connectionStringInput.value)
       await webRTCComponent.Connect(data.rtcSessionDescription)
       isConnected = true
+      $isWatching = true
+      $navigationEnabled = false
     })
     copyButton.addEventListener('click', async () => {
       copyButtonIsLoading = true
@@ -65,18 +72,23 @@
         color: settings.color
       })
     })
-    remoteScreen.addEventListener('loadedmetadata', () => {
+    remoteScreen.addEventListener('play', () => {
+      if (!webRTCComponent.IsConnected()) return
       isStreaming = true
-      copyButton.classList.add('is-hidden')
     })
   })
-  const onDisconnectClick = async (): Promise<void> => {
-    await webRTCComponent.Disconnect()
+  const reset = (): void => {
     connectionStringInput.value = ''
     connectionStringIsValid = null
     isStreaming = false
     microphoneActive = false
     isConnected = false
+    $navigationEnabled = true
+    $isWatching = false
+  }
+  const onDisconnectClick = async (): Promise<void> => {
+    await webRTCComponent.Disconnect()
+    reset()
   }
   const onFullscreenClick = (): void => {
     remoteScreen.requestFullscreen()
@@ -125,68 +137,80 @@
       </div>
     </div>
   </div>
-  <div class="form">
-    <div class="field has-addons {isStreaming || isConnected ? 'is-hidden' : ''}">
-      <div class="control has-icons-left has-icons-right">
-        <input
-          bind:this={connectionStringInput}
-          placeholder="host connection string"
-          class="input {connectionStringIsValid === null
-            ? ''
-            : connectionStringIsValid
-              ? 'is-success'
-              : 'is-danger'}"
-          type="text"
-        />
-        <span class="icon is-small is-left">
-          <i class="fas fa-user"></i>
-        </span>
-        <span class="icon is-small is-right">
-          <i
-            class="fas fa-question {connectionStringIsValid === null
-              ? 'fa-question'
-              : connectionStringIsValid
-                ? 'fa-check'
-                : 'fa-times'}"
-          ></i>
-        </span>
+  <div class="fixed-grid has-2-cols">
+    <div class="grid">
+      <div class="cell">
+        <div class="field has-addons {isStreaming || isConnected ? 'is-hidden' : ''}">
+          <div class="control has-icons-left has-icons-right">
+            <input
+              bind:this={connectionStringInput}
+              placeholder="host connection string"
+              class="input {connectionStringIsValid === null
+                ? ''
+                : connectionStringIsValid
+                  ? 'is-success'
+                  : 'is-danger'}"
+              type="text"
+            />
+            <span class="icon is-small is-left">
+              <i class="fas fa-user"></i>
+            </span>
+            <span class="icon is-small is-right">
+              <i
+                class="fas fa-question {connectionStringIsValid === null
+                  ? 'fa-question'
+                  : connectionStringIsValid
+                    ? 'fa-check'
+                    : 'fa-times'}"
+              ></i>
+            </span>
+          </div>
+          <div class="control">
+            <button
+              class="button {connectionStringIsValid === null
+                ? 'is-link'
+                : connectionStringIsValid
+                  ? 'is-success'
+                  : 'is-danger'}"
+              bind:this={connectButton}
+              disabled={connectionStringIsValid ? false : true}
+            >
+              <span class="icon">
+                <i class="fas fa-link"></i>
+              </span>
+              <span
+                >Connect {connectionStringIsValid
+                  ? getDataFromBananasUrl(connectionStringInput.value).data.username
+                  : ''}
+              </span>
+            </button>
+          </div>
+        </div>
+        <div class="control">
+          <button
+            class="button is-link {!isConnected || isStreaming
+              ? 'is-hidden'
+              : ''} {copyButtonIsLoading ? 'is-loading' : ''}"
+            bind:this={copyButton}
+          >
+            <span class="icon">
+              <i class="fas fa-copy"></i>
+            </span>
+            <span>Copy my connection string</span>
+          </button>
+        </div>
       </div>
-      <div class="control">
+      <div class="cell">
         <button
-          class="button {connectionStringIsValid === null
-            ? 'is-link'
-            : connectionStringIsValid
-              ? 'is-success'
-              : 'is-danger'}"
-          bind:this={connectButton}
-          disabled={connectionStringIsValid ? false : true}
+          class="button is-danger {isStreaming || !isConnected ? 'is-hidden' : ''}"
+          on:click={onDisconnectClick}
         >
           <span class="icon">
-            <i class="fas fa-link"></i>
+            <i class="fas fa-unlink"></i>
           </span>
-          <span
-            >Connect {connectionStringIsValid
-              ? getDataFromBananasUrl(connectionStringInput.value).data.username
-              : ''}
-          </span>
+          <span>Cancel</span>
         </button>
       </div>
-    </div>
-  </div>
-
-  <div class="field">
-    <div class="control">
-      <button
-        class="button is-link {!isConnected || isStreaming ? 'is-hidden' : ''} {copyButtonIsLoading
-          ? 'is-loading'
-          : ''}"
-        bind:this={copyButton}
-      >
-        <span class="icon">
-          <i class="fas fa-copy"></i>
-        </span>
-        <span>Copy my connection string</span>
-      </button>
     </div>
   </div>
 </div>

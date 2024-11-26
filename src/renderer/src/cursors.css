@@ -11,7 +11,7 @@ body {
 
 .cursor .name {
   display: block;
-  text-shadow:'-1px 0 black, 0 1px black, 1px 0 black, 0 -1px black';
+  text-shadow: '-1px 0 black, 0 1px black, 1px 0 black, 0 -1px black';
   color: var(--name-color);
 }
 
@@ -53,10 +53,21 @@ body {
 }
 
 @keyframes scaleUp {
-  0% { transform: translate(-50%, -50%) scale(0) }
-  60% , 100% { transform: translate(-50%, -50%)  scale(1)}
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+  }
+  60%,
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
 }
 @keyframes pulse {
-  0% , 60% , 100%{ transform:  scale(1) }
-  80% { transform:  scale(1.2)}
+  0%,
+  60%,
+  100% {
+    transform: scale(1);
+  }
+  80% {
+    transform: scale(1.2);
+  }
 }

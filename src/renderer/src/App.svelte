@@ -3,8 +3,11 @@
   import Join from './Join.svelte'
   import Host from './Host.svelte'
   import Settings from './Settings.svelte'
-  import { useActiveView } from './stores'
+  import { useActiveView, useNavigationEnabled, useIsHosting, useIsWatching } from './stores'
   const activeView = useActiveView()
+  useNavigationEnabled()
+  useIsWatching()
+  useIsHosting()
 </script>
 
 <Navigation />

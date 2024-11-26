@@ -1,12 +1,16 @@
 <script lang="ts">
   import { onMount } from 'svelte'
+  import { useNavigationEnabled, useIsHosting } from './stores'
   import { mayBeConnectionString, getDataFromBananasUrl, ConnectionType } from './Utils'
   import WebRTC from './WebRTC.svelte'
+
+  const navigationEnabled = useNavigationEnabled()
+  const isHosting = useIsHosting()
+
   let webRTCComponent: WebRTC
   let connectionStringInput: HTMLInputElement
   let connectButton: HTMLButtonElement
   let copyButton: HTMLButtonElement
-  let startSessionButton: HTMLButtonElement
 
   let cursorsActive = false
   let displayStreamActive = false
@@ -54,13 +58,24 @@
   const onStartSessionButtonClick = async (): Promise<void> => {
     await webRTCComponent.Setup()
     sessionStarted = true
+    $navigationEnabled = false
+    $isHosting = true
+  }
+  const reset = (): void => {
+    connectionStringInput.value = ''
+    cursorsActive = false
+    displayStreamActive = false
+    microphoneActive = true
+    isStreaming = false
+    sessionStarted = false
+    connectionStringIsValid = null
+    copyButtonIsLoading = false
+    $navigationEnabled = true
+    $isHosting = false
   }
   const onDisconnectClick = async (): Promise<void> => {
     await webRTCComponent.Disconnect()
-    connectionStringInput.value = ''
-    connectionStringIsValid = null
-    isStreaming = false
-    sessionStarted = false
+    reset()
   }
   const onMicrophoneToggle = async (): Promise<void> => {
     microphoneActive = !microphoneActive
@@ -126,24 +141,34 @@
       </div>
     </div>
   </div>
-  <div class="form">
-    <div class="field">
-      <div class="control">
+  <div class="fixed-grid has-2-cols">
+    <div class="grid">
+      <div class="cell">
         <button
-          class="button is-link {!sessionStarted ? '' : 'is-hidden'}"
-          bind:this={startSessionButton}
+          class="button is-link {isStreaming ? 'is-hidden' : ''}"
+          disabled={sessionStarted}
           on:click={onStartSessionButtonClick}
         >
           <span class="icon">
             <i class="fas fa-play"></i>
           </span>
-          <span>Start a session</span>
+          <span>{!sessionStarted ? 'Start a new session' : 'Session started'}</span>
         </button>
       </div>
-    </div>
 
-    <div class="field">
-      <div class="control">
+      <div class="cell">
+        <button
+          class="button is-danger {!sessionStarted || isStreaming ? 'is-hidden' : ''}"
+          on:click={onDisconnectClick}
+        >
+          <span class="icon">
+            <i class="fas fa-unlink"></i>
+          </span>
+          <span>Cancel</span>
+        </button>
+      </div>
+
+      <div class="cell">
         <button
           class="button is-link {!sessionStarted || isStreaming
             ? 'is-hidden'
