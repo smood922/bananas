@@ -33,6 +33,9 @@ class Cursor {
     this.cursorEl.style.maxWidth = '24px'
     this.nameEl.innerText = data.name
     this.nameEl.style.textShadow = '-1px 0 black, 0 1px black, 1px 0 black, 0 -1px black'
+    this.cursorEl.style.fill = data.color
+    this.nameEl.style.color = data.color
+    this.nameEl.innerText = data.name
     this.root.id = data.id
     this.root.style.position = 'absolute'
     this.root.style.width = '24px'
@@ -50,9 +53,6 @@ class Cursor {
     this.data = data
     this.root.style.left = `${data.x - 24}px`
     this.root.style.top = `${data.y}px`
-    this.cursorEl.style.fill = data.color
-    this.nameEl.style.color = data.color
-    this.nameEl.innerText = data.name
   }
 }
 
