@@ -5,19 +5,52 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { windowStateKeeper } from './stateKeeper'
 import { ipcMainHandlersInit } from './ipcMainHandlers'
+import { isInProductionMode } from './utils'
+
+const CUSTOM_PROTOCOL = 'bananas'
+
+let MAIN_WINDOW: BrowserWindow
 
 if (process.defaultApp) {
   if (process.argv.length >= 2) {
-    app.setAsDefaultProtocolClient('bananas', process.execPath, [path.resolve(process.argv[1])])
+    app.setAsDefaultProtocolClient(CUSTOM_PROTOCOL, process.execPath, [
+      path.resolve(process.argv[1])
+    ])
   }
 } else {
-  app.setAsDefaultProtocolClient('bananas')
+  app.setAsDefaultProtocolClient(CUSTOM_PROTOCOL)
 }
+
+if (isInProductionMode()) {
+  const SINGLE_INSTANCE_LOCK = app.requestSingleInstanceLock()
+
+  if (!SINGLE_INSTANCE_LOCK) {
+    app.quit()
+  }
+}
+
+const sendOpenBananasUrlToRenderer = (url: string): void => {
+  MAIN_WINDOW.webContents.send('openBananasURL', url)
+}
+
+app.on('second-instance', (_, commandLine) => {
+  if (MAIN_WINDOW) {
+    if (MAIN_WINDOW.isMinimized()) MAIN_WINDOW.restore()
+    MAIN_WINDOW.focus()
+  }
+  const url = commandLine.pop()
+  if (url) sendOpenBananasUrlToRenderer(url)
+})
+
+app.on('open-url', (evt, url: string) => {
+  evt.preventDefault()
+  sendOpenBananasUrlToRenderer(url)
+})
 
 async function createWindow(): Promise<void> {
   const mainWindowState = await windowStateKeeper('main')
 
-  const mainWindow = new BrowserWindow({
+  MAIN_WINDOW = new BrowserWindow({
     width: mainWindowState.width,
     height: mainWindowState.height,
     x: mainWindowState.x,
@@ -33,7 +66,7 @@ async function createWindow(): Promise<void> {
     }
   })
 
-  mainWindowState.track(mainWindow)
+  mainWindowState.track(MAIN_WINDOW)
 
   session.defaultSession.setDisplayMediaRequestHandler((_, callback) => {
     desktopCapturer.getSources({ types: ['screen'] }).then((sources) => {
@@ -41,23 +74,23 @@ async function createWindow(): Promise<void> {
     })
   })
 
-  mainWindow.on('ready-to-show', () => {
-    mainWindow.show()
+  MAIN_WINDOW.on('ready-to-show', () => {
+    MAIN_WINDOW.show()
   })
 
-  mainWindow.webContents.setWindowOpenHandler((details) => {
+  MAIN_WINDOW.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
     return { action: 'deny' }
   })
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+    MAIN_WINDOW.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+    MAIN_WINDOW.loadFile(join(__dirname, '../renderer/index.html'))
   }
 
   if (mainWindowState.isMaximized) {
-    mainWindow.maximize()
+    MAIN_WINDOW.maximize()
   }
 }
 
@@ -71,6 +104,10 @@ app.whenReady().then(async () => {
   ipcMainHandlersInit()
 
   await createWindow()
+  const coldStartUrl = process.argv.find((arg) => arg.startsWith(CUSTOM_PROTOCOL + '://'))
+  if (coldStartUrl) {
+    sendOpenBananasUrlToRenderer(coldStartUrl)
+  }
 
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

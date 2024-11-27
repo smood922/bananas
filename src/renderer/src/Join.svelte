@@ -7,14 +7,13 @@
     ConnectionType,
     getUUIDv4
   } from './Utils'
-  import { useNavigationEnabled, useIsWatching } from './stores'
+  import { useNavigationEnabled, useIsWatching, useParticipantUrl } from './stores'
   import WebRTC from './WebRTC.svelte'
 
   const navigationEnabled = useNavigationEnabled()
   const isWatching = useIsWatching()
 
   let webRTCComponent: WebRTC
-  let connectionStringInput: HTMLInputElement
   let connectButton: HTMLButtonElement
   let copyButton: HTMLButtonElement
   let remoteScreen: HTMLVideoElement
@@ -25,23 +24,24 @@
   let isConnected = false
   let connectionStringIsValid: boolean | null = null
   let copyButtonIsLoading = false
+  let connectionString = useParticipantUrl()
+
+  const onConnectionStringChange = (): void => {
+    if ($connectionString === '') {
+      connectionStringIsValid = null
+      return
+    }
+    connectionStringIsValid = mayBeConnectionString(ConnectionType.HOST, $connectionString)
+  }
+
+  $: $connectionString, onConnectionStringChange()
 
   onMount(async () => {
     const settings = await window.BananasApi.getSettings()
     makeVideoDraggable(remoteScreen)
-    connectionStringInput.addEventListener('input', () => {
-      if (connectionStringInput.value === '') {
-        connectionStringIsValid = null
-        return
-      }
-      connectionStringIsValid = mayBeConnectionString(
-        ConnectionType.HOST,
-        connectionStringInput.value
-      )
-    })
     connectButton.addEventListener('click', async () => {
       await webRTCComponent.Setup(remoteScreen)
-      const data = getDataFromBananasUrl(connectionStringInput.value)
+      const data = getDataFromBananasUrl($connectionString)
       await webRTCComponent.Connect(data.rtcSessionDescription)
       isConnected = true
       $isWatching = true
@@ -49,7 +49,7 @@
     })
     copyButton.addEventListener('click', async () => {
       copyButtonIsLoading = true
-      const remoteData = getDataFromBananasUrl(connectionStringInput.value)
+      const remoteData = getDataFromBananasUrl($connectionString)
       const data = await webRTCComponent.CreateParticipantUrl(remoteData.rtcSessionDescription, {
         username: settings.username
       })
@@ -78,7 +78,7 @@
     })
   })
   const reset = (): void => {
-    connectionStringInput.value = ''
+    $connectionString = ''
     connectionStringIsValid = null
     isStreaming = false
     microphoneActive = false
@@ -143,7 +143,7 @@
         <div class="field has-addons {isStreaming || isConnected ? 'is-hidden' : ''}">
           <div class="control has-icons-left has-icons-right">
             <input
-              bind:this={connectionStringInput}
+              bind:value={$connectionString}
               placeholder="host connection string"
               class="input {connectionStringIsValid === null
                 ? ''
@@ -180,7 +180,7 @@
               </span>
               <span
                 >Connect {connectionStringIsValid
-                  ? getDataFromBananasUrl(connectionStringInput.value).data.username
+                  ? getDataFromBananasUrl($connectionString).data.username
                   : ''}
               </span>
             </button>

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { useNavigationEnabled, useIsHosting } from './stores'
+  import { useNavigationEnabled, useIsHosting, useHostUrl } from './stores'
   import { mayBeConnectionString, getDataFromBananasUrl, ConnectionType } from './Utils'
   import WebRTC from './WebRTC.svelte'
 
@@ -8,7 +8,6 @@
   const isHosting = useIsHosting()
 
   let webRTCComponent: WebRTC
-  let connectionStringInput: HTMLInputElement
   let connectButton: HTMLButtonElement
   let copyButton: HTMLButtonElement
 
@@ -19,6 +18,17 @@
   let sessionStarted = false
   let connectionStringIsValid: boolean | null = null
   let copyButtonIsLoading = false
+  let connectionString = useHostUrl()
+
+  const onConnectionStringChange = (): void => {
+    if ($connectionString === '') {
+      connectionStringIsValid = null
+      return
+    }
+    connectionStringIsValid = mayBeConnectionString(ConnectionType.PARTICIPANT, $connectionString)
+  }
+
+  $: $connectionString, onConnectionStringChange()
 
   const toggleRemoteCursors = (): void => {
     cursorsActive = !cursorsActive
@@ -28,18 +38,8 @@
 
   onMount(async () => {
     const settings = await window.BananasApi.getSettings()
-    connectionStringInput.addEventListener('input', () => {
-      if (connectionStringInput.value === '') {
-        connectionStringIsValid = null
-        return
-      }
-      connectionStringIsValid = mayBeConnectionString(
-        ConnectionType.PARTICIPANT,
-        connectionStringInput.value
-      )
-    })
     connectButton.addEventListener('click', async () => {
-      const data = getDataFromBananasUrl(connectionStringInput.value)
+      const data = getDataFromBananasUrl($connectionString)
       await webRTCComponent.Connect(data.rtcSessionDescription)
       isStreaming = true
       displayStreamActive = true
@@ -62,7 +62,7 @@
     $isHosting = true
   }
   const reset = (): void => {
-    connectionStringInput.value = ''
+    $connectionString = ''
     cursorsActive = false
     displayStreamActive = false
     microphoneActive = true
@@ -186,7 +186,7 @@
     <div class="field has-addons {!sessionStarted || isStreaming ? 'is-hidden' : ''}">
       <div class="control has-icons-left has-icons-right">
         <input
-          bind:this={connectionStringInput}
+          bind:value={$connectionString}
           placeholder="participant connection string"
           class="input {connectionStringIsValid === null
             ? ''
@@ -223,7 +223,7 @@
           </span>
           <span
             >Connect {connectionStringIsValid
-              ? getDataFromBananasUrl(connectionStringInput.value).data.username
+              ? getDataFromBananasUrl($connectionString).data.username
               : ''}
           </span>
         </button>

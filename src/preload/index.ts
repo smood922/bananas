@@ -2,7 +2,28 @@ import { ipcRenderer } from 'electron'
 import { contextBridge } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
+let HANDLE_URL_CLICKS = true
+
+const onDocumentReady = (callback: () => void): void => {
+  if (document.readyState !== 'complete') {
+    document.addEventListener('DOMContentLoaded', callback)
+  } else {
+    callback()
+  }
+}
+
+ipcRenderer.on('openBananasURL', (_, url) => {
+  if (!HANDLE_URL_CLICKS) return
+  onDocumentReady(() => {
+    window.postMessage({ type: 'openBananasURL', url }, '*')
+  })
+})
+
 const BananasApi = {
+  handleUrlClicks: (state: boolean | undefined): boolean => {
+    if (state) HANDLE_URL_CLICKS = state
+    return HANDLE_URL_CLICKS
+  },
   getSettings: async (): Promise<{ username: string; color: string }> => {
     return await ipcRenderer.invoke('getSettings')
   },

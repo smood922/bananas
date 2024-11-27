@@ -42,11 +42,16 @@ export const getConnectionString = (
 
 export const getDataFromBananasUrl = (
   url: string
-): { data: { username: string }; rtcSessionDescription: RTCSessionDescriptionInit } => {
+): {
+  type: ConnectionType
+  data: { username: string }
+  rtcSessionDescription: RTCSessionDescriptionInit
+} => {
   const u = new URL(url)
   const token = u.searchParams.get('token')
   const username = u.searchParams.get('username')
   return {
+    type: u.pathname.slice(2) as ConnectionType,
     data: {
       username: username
     },

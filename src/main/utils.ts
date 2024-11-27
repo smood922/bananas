@@ -8,3 +8,8 @@ export const loadWindowContents = (win: Electron.BrowserWindow, file: string): v
     win.loadFile(join(__dirname, '../renderer/' + file))
   }
 }
+
+export const isInProductionMode = (): boolean => {
+  if (is.dev && process.env['ELECTRON_RENDERER_URL']) return false
+  return true
+}

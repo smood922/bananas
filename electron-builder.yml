@@ -1,5 +1,5 @@
 ---
-appId: com.electron.app
+appId: net.getbananas
 productName: bananas
 directories:
   buildResources: build
@@ -54,4 +54,4 @@ deb:
 npmRebuild: false
 publish:
   provider: generic
-  url: https://example.com/auto-updates
+  url: https://auto-updates.getbananas.net/
