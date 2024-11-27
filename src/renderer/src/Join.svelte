@@ -117,6 +117,7 @@
       <div class="grid">
         <div class="cell">
           <button
+            aria-label={microphoneActive ? 'Microphone active' : 'Microphone muted'}
             title={microphoneActive ? 'Microphone active' : 'Microphone muted'}
             class="button {microphoneActive ? 'is-success' : 'is-danger'}"
             on:click={onMicrophoneToggle}
@@ -127,7 +128,7 @@
           </button>
         </div>
         <div class="cell has-text-right">
-          <button class="button is-danger" on:click={onDisconnectClick}>
+          <button class="button is-danger" aria-label="Disconnect" on:click={onDisconnectClick}>
             <span class="icon">
               <i class="fas fa-unlink"></i>
             </span>
