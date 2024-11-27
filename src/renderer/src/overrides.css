@@ -1,3 +1,7 @@
 html {
   overflow-y: auto;
 }
+
+span.color-picker div.wrapper.is-open {
+  background-color: var(--bulma-border);
+}

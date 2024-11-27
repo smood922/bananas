@@ -1,6 +1,6 @@
 {
   "name": "bananas",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Bananas Screen Sharing is a simple and easy-to-use screen sharing tool for Mac, Windows, and Linux.",
   "main": "./out/main/index.js",
   "author": {
@@ -31,7 +31,8 @@
     "@electron-toolkit/preload": "^3.0.1",
     "@electron-toolkit/utils": "^3.0.0",
     "electron-settings": "4.0.4",
-    "electron-updater": "^6.1.7"
+    "electron-updater": "^6.1.7",
+    "svelte-awesome-color-picker": "3.1.4"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config-prettier": "^2.0.0",

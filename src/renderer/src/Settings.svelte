@@ -1,62 +1,59 @@
 <script lang="ts">
   import { onMount } from 'svelte'
+  import ColorPicker from 'svelte-awesome-color-picker'
 
-  let username: HTMLInputElement
-  let color: HTMLInputElement
-  let modalSuccess: HTMLDivElement
-  let modalFailure: HTMLDivElement
   let colorPreviewIcon: HTMLElement
+  let colorValue: string = '#ffffff'
+  let usernameValue: string = 'Banana Joe'
+  let isColorValid = false
+  let isUsernameValid = false
+  let modalSuccessIsActive = false
+  let modalFailureIsActive = false
+
+  $: colorValue, checkColor()
+  $: usernameValue, checkUsername()
 
   const checkIsValidHexColor = (color: string): boolean => {
     return /^#[0-9A-F]{6}$/i.test(color)
   }
   function checkColor(): void {
-    if (checkIsValidHexColor(this.value)) {
-      this.classList.remove('is-danger')
-      this.classList.add('is-success')
-      colorPreviewIcon.style.setProperty('--color', this.value)
+    if (checkIsValidHexColor(colorValue)) {
+      isColorValid = true
+      colorPreviewIcon?.style.setProperty('--color', colorValue)
     } else {
-      this.classList.remove('is-success')
-      this.classList.add('is-danger')
+      isColorValid = false
     }
   }
   function checkUsername(): void {
-    if (this.value.length > 0 && this.value.length < 32) {
-      this.classList.remove('is-danger')
-      this.classList.add('is-success')
+    if (usernameValue.length > 0 && usernameValue.length < 32) {
+      isUsernameValid = true
     } else {
-      this.classList.remove('is-success')
-      this.classList.add('is-danger')
+      isUsernameValid = false
     }
   }
   async function onSubmit(evt: Event): Promise<void> {
     evt.preventDefault()
-    if (
-      checkIsValidHexColor(color.value) &&
-      username.value.length > 0 &&
-      username.value.length < 32
-    ) {
-      await window.BananasApi.updateSettings({ username: username.value, color: color.value })
-      modalSuccess.classList.add('is-active')
+    if (checkIsValidHexColor(colorValue) && usernameValue.length > 0 && usernameValue.length < 32) {
+      await window.BananasApi.updateSettings({ username: usernameValue, color: colorValue })
+      modalSuccessIsActive = true
       setTimeout(() => {
-        modalSuccess.classList.remove('is-active')
+        modalSuccessIsActive = false
       }, 2000)
     } else {
-      modalFailure.classList.add('is-active')
+      modalFailureIsActive = true
       setTimeout(() => {
-        modalFailure.classList.remove('is-active')
+        modalFailureIsActive = false
       }, 2000)
     }
   }
   onMount(async () => {
     const settings = await window.BananasApi.getSettings()
-    username.value = settings.username
-    color.value = settings.color
-    colorPreviewIcon.style.setProperty('--color', color.value)
+    usernameValue = settings.username
+    colorValue = settings.color
   })
 </script>
 
-<div bind:this={modalSuccess} class="modal">
+<div class="modal {modalSuccessIsActive ? 'is-active' : ''}">
   <div class="modal-background"></div>
   <div class="modal-content">
     <div class="box">
@@ -66,7 +63,7 @@
   </div>
 </div>
 
-<div bind:this={modalFailure} class="modal">
+<div class="modal {modalFailureIsActive ? 'is-active' : ''}">
   <div class="modal-background"></div>
   <div class="modal-content">
     <div class="box">
@@ -83,9 +80,8 @@
       <label class="label" for="username">Username</label>
       <div class="control has-icons-left has-icons-right">
         <input
-          bind:this={username}
-          on:input={checkUsername}
-          class="input"
+          bind:value={usernameValue}
+          class="input {isUsernameValid ? 'is-success' : 'is-danger'}"
           type="text"
           id="username"
           placeholder="Banana Joe"
@@ -100,9 +96,8 @@
       <label class="label" for="color">Color</label>
       <div class="control has-icons-left has-icons-right">
         <input
-          bind:this={color}
-          on:input={checkColor}
-          class="input"
+          bind:value={colorValue}
+          class="input {isColorValid ? 'is-success' : 'is-danger'}"
           type="text"
           id="color"
           placeholder="#fffff"
@@ -110,6 +105,7 @@
         <span class="icon is-small is-left">
           <i bind:this={colorPreviewIcon} class="fas fa-palette"></i>
         </span>
+        <ColorPicker bind:hex={colorValue} isTextInput={false} isAlpha={false} />
       </div>
     </div>
 

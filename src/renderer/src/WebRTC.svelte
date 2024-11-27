@@ -199,6 +199,12 @@
         }
         stream = null
       }
+      if (audioStream) {
+        for (const track of audioStream.getTracks()) {
+          track.stop()
+        }
+        audioStream = null
+      }
     } catch (e) {
       errorHander(e)
     }
