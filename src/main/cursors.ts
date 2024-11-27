@@ -13,7 +13,7 @@ export const createCursorsWindow = async (): Promise<BrowserWindow> => {
     frame: false,
     autoHideMenuBar: true,
     transparent: true,
-    closable: false,
+    closable: true,
     fullscreen: true,
     minimizable: false,
     webPreferences: {
