@@ -4,6 +4,7 @@
 
 # Bananas Screen Sharing
 
+[![Downloads](https://img.shields.io/github/downloads/mistweaverco/bananas/total.svg?style=for-the-badge)](https://getbananas.net/)
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/mistweaverco/bananas?style=for-the-badge)](https://github.com/mistweaverco/bananas/releases/latest)
 
 [Install](#install) • [Website](https://getbananas.net/)
