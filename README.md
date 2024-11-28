@@ -15,7 +15,8 @@ Bananas Screen Sharing is a simple and
 easy-to-use screen sharing tool for Mac, Windows, and Linux.
 
 It utilizes a peer-to-peer connection to share your screen with others,
-without the need for an account or any server infrastructure.
+without the need for an account or any server infrastructure
+(except for the stun, turn and signaling servers that are needed for exchanging the initial connection information)
 
 <p></p>
 
