@@ -81,14 +81,14 @@ jobs:
       - name: Install node dependencies
         run: npm ci
       - name: Build MacOS
-        run: ./scripts/build.sh
-      - name: MacOS Release
-        run: ./scripts/release.sh
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_LINK: ${{ secrets.CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-
+        run: ./scripts/build.sh
+      - name: MacOS Release
+        run: ./scripts/release.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
